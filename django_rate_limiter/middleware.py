@@ -3,13 +3,15 @@ Django middleware for automatic rate limiting.
 """
 
 import re
-from typing import Dict, Any, Optional
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from typing import Any, Dict, Optional
+
 from django.conf import settings
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.deprecation import MiddlewareMixin
+
 from .algorithms import get_rate_limiter
 from .backends import get_backend
-from .decorators import get_user_identifier, get_client_ip
+from .decorators import get_client_ip, get_user_identifier
 from .exceptions import RateLimitExceeded
 
 

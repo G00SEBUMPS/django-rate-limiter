@@ -10,6 +10,7 @@ This script demonstrates how to configure and use different storage backends:
 
 import os
 import sys
+
 import django
 from django.conf import settings
 
@@ -41,15 +42,15 @@ if not settings.configured:
 
 django.setup()
 
+from django_rate_limiter.algorithms import get_rate_limiter
 from django_rate_limiter.backends import (
-    MemoryBackend,
     DatabaseBackend,
+    MemoryBackend,
     RedisBackend,
     get_backend,
 )
-from django_rate_limiter.algorithms import get_rate_limiter
 from django_rate_limiter.decorators import rate_limit
-from django_rate_limiter.exceptions import RateLimitExceeded, BackendError
+from django_rate_limiter.exceptions import BackendError, RateLimitExceeded
 
 
 def demo_memory_backend():

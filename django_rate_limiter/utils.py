@@ -2,12 +2,14 @@
 Utility functions for Django Rate Limiter.
 """
 
-import time
 import hashlib
-from typing import Dict, Any, List
+import time
+from typing import Any, Dict, List
+
 from django.conf import settings
-from .backends import get_backend
+
 from .algorithms import get_rate_limiter
+from .backends import get_backend
 from .exceptions import RateLimitExceeded
 
 

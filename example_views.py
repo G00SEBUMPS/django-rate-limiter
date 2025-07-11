@@ -4,18 +4,18 @@ Example Django views showing rate limiter configuration with different backends.
 This demonstrates how to integrate the Django Rate Limiter in a real Django project.
 """
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+
 from django_rate_limiter.decorators import (
+    custom_key_rate_limit,
+    per_ip_rate_limit,
+    per_user_rate_limit,
     rate_limit,
     throttle,
-    per_user_rate_limit,
-    per_ip_rate_limit,
-    custom_key_rate_limit,
 )
-
 
 # =============================================================================
 # MEMORY BACKEND EXAMPLES (Development)
@@ -197,8 +197,8 @@ def smart_api_endpoint(request):
 # PROGRAMMATIC RATE LIMITING
 # =============================================================================
 
-from django_rate_limiter.utils import check_rate_limit, is_rate_limited
 from django_rate_limiter.exceptions import RateLimitExceeded
+from django_rate_limiter.utils import check_rate_limit, is_rate_limited
 
 
 def manual_rate_check_view(request):

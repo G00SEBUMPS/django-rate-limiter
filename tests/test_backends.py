@@ -2,9 +2,10 @@
 Tests for Django Rate Limiter backends.
 """
 
-import time
 import threading
+import time
 from unittest import TestCase
+
 from django_rate_limiter.backends import MemoryBackend, get_backend
 from django_rate_limiter.exceptions import BackendError
 

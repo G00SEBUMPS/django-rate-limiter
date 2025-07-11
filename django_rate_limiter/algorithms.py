@@ -8,7 +8,8 @@ and fixed window approaches.
 
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Tuple
+
 from .backends import BaseBackend, get_backend
 from .exceptions import RateLimitExceeded
 

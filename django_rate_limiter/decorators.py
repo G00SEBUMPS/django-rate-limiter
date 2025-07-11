@@ -3,8 +3,10 @@ Decorators for rate limiting Django views and functions.
 """
 
 import functools
-from typing import Callable, Any, Optional, Dict
+from typing import Any, Callable, Dict, Optional
+
 from django.http import HttpRequest, HttpResponse, JsonResponse
+
 from .algorithms import get_rate_limiter
 from .backends import get_backend
 from .exceptions import RateLimitExceeded

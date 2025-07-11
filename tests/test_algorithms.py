@@ -2,14 +2,15 @@
 Tests for Django Rate Limiter algorithms.
 """
 
-import time
 import threading
+import time
 from unittest import TestCase
+
 from django_rate_limiter.algorithms import (
-    SlidingWindowRateLimiter,
-    TokenBucketRateLimiter,
     FixedWindowRateLimiter,
     SlidingWindowCounterRateLimiter,
+    SlidingWindowRateLimiter,
+    TokenBucketRateLimiter,
     get_rate_limiter,
 )
 from django_rate_limiter.backends import MemoryBackend

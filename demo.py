@@ -5,6 +5,7 @@ Example script demonstrating Django Rate Limiter usage.
 
 import os
 import sys
+
 import django
 from django.conf import settings
 
@@ -29,11 +30,11 @@ if not settings.configured:
 django.setup()
 
 from django_rate_limiter import (
-    SlidingWindowRateLimiter,
-    TokenBucketRateLimiter,
     FixedWindowRateLimiter,
     MemoryBackend,
     RateLimitExceeded,
+    SlidingWindowRateLimiter,
+    TokenBucketRateLimiter,
 )
 
 

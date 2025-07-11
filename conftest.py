@@ -3,6 +3,7 @@ Pytest configuration for Django Rate Limiter tests.
 """
 
 import os
+
 import django
 from django.conf import settings
 
