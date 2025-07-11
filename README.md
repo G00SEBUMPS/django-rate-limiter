@@ -500,6 +500,25 @@ pytest
 pytest --cov=django_rate_limiter --cov-report=html
 ```
 
+## Development Tools 🛠️
+
+This project includes comprehensive development tools to ensure code quality:
+
+```bash
+# Quick setup
+./setup-dev.sh
+
+# Run all quality checks
+./check-code.sh           # Shell script
+python check_quality.py   # Python script  
+make check                # Makefile
+
+# Pre-commit hooks (automatic)
+pre-commit install
+```
+
+For detailed information about development tools, see [DEV_TOOLS.md](DEV_TOOLS.md).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

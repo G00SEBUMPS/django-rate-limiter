@@ -99,7 +99,7 @@ class RateLimitMiddleware(MiddlewareMixin):
                 return rule
         return None
 
-    def _get_rate_limiter(self, algorithm: str = None) -> Any:
+    def _get_rate_limiter(self, algorithm: Optional[str] = None) -> Any:
         """Get rate limiter instance."""
         algorithm = algorithm or self.config.get("DEFAULT_ALGORITHM", "sliding_window")
         return get_rate_limiter(algorithm=algorithm, backend=self.backend)
@@ -170,7 +170,8 @@ class RateLimitMiddleware(MiddlewareMixin):
         identifier = get_user_identifier(request, use_user)
 
         # Get rate limiter
-        rate_limiter = self._get_rate_limiter(rule.get("algorithm"))
+        algorithm: Optional[str] = rule.get("algorithm")
+        rate_limiter = self._get_rate_limiter(algorithm)
 
         try:
             # Check rate limit

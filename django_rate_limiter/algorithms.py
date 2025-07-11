@@ -8,7 +8,7 @@ and fixed window approaches.
 
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from .backends import BaseBackend, get_backend
 from .exceptions import RateLimitExceeded
@@ -17,7 +17,9 @@ from .exceptions import RateLimitExceeded
 class BaseRateLimiter(ABC):
     """Abstract base class for rate limiters."""
 
-    def __init__(self, backend: BaseBackend = None, key_prefix: str = "rate_limit"):
+    def __init__(
+        self, backend: Optional[BaseBackend] = None, key_prefix: str = "rate_limit"
+    ):
         self.backend = backend or get_backend("memory")
         self.key_prefix = key_prefix
 
@@ -157,7 +159,7 @@ class TokenBucketRateLimiter(BaseRateLimiter):
         window: int,
         scope: str = "",
         tokens_per_request: int = 1,
-        burst_capacity: int = None,
+        burst_capacity: Optional[int] = None,
     ) -> Tuple[bool, Dict[str, Any]]:
         """
         Check if request is allowed using token bucket algorithm.
@@ -298,7 +300,7 @@ class SlidingWindowCounterRateLimiter(BaseRateLimiter):
 
     def __init__(
         self,
-        backend: BaseBackend = None,
+        backend: Optional[BaseBackend] = None,
         key_prefix: str = "rate_limit",
         num_windows: int = 10,
     ):

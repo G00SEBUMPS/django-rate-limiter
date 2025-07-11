@@ -38,7 +38,7 @@ class BaseBackend(ABC):
         pass
 
     @abstractmethod
-    def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
+    def increment(self, key: str, amount: int = 1, ttl: Optional[int] = None) -> int:
         """Atomically increment a counter."""
         pass
 
@@ -48,7 +48,7 @@ class BaseBackend(ABC):
         pass
 
     @abstractmethod
-    def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
+    def atomic_update(self, key: str, updater_func, ttl: Optional[int] = None) -> Any:
         """Perform atomic update on a key's value."""
         pass
 
@@ -57,7 +57,7 @@ class MemoryBackend(BaseBackend):
     """Thread-safe in-memory storage backend."""
 
     def __init__(self):
-        self._data: Dict[str, Tuple[Dict[str, Any], float]] = {}
+        self._data: Dict[str, Tuple[Dict[str, Any], Optional[float]]] = {}
         self._lock = threading.RLock()  # Use RLock to prevent deadlocks
 
     def _cleanup_expired(self):
@@ -87,7 +87,7 @@ class MemoryBackend(BaseBackend):
             expiry = time.time() + ttl if ttl else None
             self._data[key] = (value.copy(), expiry)
 
-    def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
+    def increment(self, key: str, amount: int = 1, ttl: Optional[int] = None) -> int:
         """Atomically increment a counter."""
         with self._lock:
             current_data = self.get(key) or {"count": 0}
@@ -110,7 +110,7 @@ class MemoryBackend(BaseBackend):
         with self._lock:
             self._data.pop(key, None)
 
-    def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
+    def atomic_update(self, key: str, updater_func, ttl: Optional[int] = None) -> Any:
         """Perform atomic update on a key's value."""
         with self._lock:
             current_data = self.get(key)
@@ -163,7 +163,7 @@ class DatabaseBackend(BaseBackend):
         except Exception as e:
             raise BackendError(f"Database set error: {e}")
 
-    def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
+    def increment(self, key: str, amount: int = 1, ttl: Optional[int] = None) -> int:
         """Atomically increment a counter."""
         try:
             from .models import RateLimitEntry
@@ -205,7 +205,7 @@ class DatabaseBackend(BaseBackend):
         except Exception as e:
             raise BackendError(f"Database delete error: {e}")
 
-    def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
+    def atomic_update(self, key: str, updater_func, ttl: Optional[int] = None) -> Any:
         """Perform atomic update on a key's value."""
         try:
             from .models import RateLimitEntry
@@ -270,7 +270,7 @@ class RedisBackend(BaseBackend):
         except Exception as e:
             raise BackendError(f"Redis set error: {e}")
 
-    def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
+    def increment(self, key: str, amount: int = 1, ttl: Optional[int] = None) -> int:
         """Atomically increment a counter."""
         try:
             # Use Redis pipeline for atomicity
@@ -301,7 +301,7 @@ class RedisBackend(BaseBackend):
         except Exception as e:
             raise BackendError(f"Redis delete error: {e}")
 
-    def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
+    def atomic_update(self, key: str, updater_func, ttl: Optional[int] = None) -> Any:
         """Perform atomic update on a key's value."""
         try:
             with self.redis.pipeline() as pipe:

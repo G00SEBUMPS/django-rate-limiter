@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# Django Rate Limiter - Pre-commit Git Hook
+# 
+# This hook runs automatically before each commit to ensure code quality.
+# To install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+echo "🔍 Running pre-commit quality checks..."
+
+# Run the quality check script
+if ./check-code.sh; then
+    echo "✅ Pre-commit checks passed!"
+    exit 0
+else
+    echo "❌ Pre-commit checks failed!"
+    echo ""
+    echo "Your commit has been aborted. Please fix the issues above and try again."
+    echo "You can run './check-code.sh' to see the detailed output."
+    echo ""
+    echo "To bypass these checks (NOT recommended), use: git commit --no-verify"
+    exit 1
+fi
