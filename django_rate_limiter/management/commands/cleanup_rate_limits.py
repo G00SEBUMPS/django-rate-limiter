@@ -9,28 +9,28 @@ from django_rate_limiter.models import RateLimitEntry
 
 class Command(BaseCommand):
     """Clean up expired rate limit entries from the database."""
-    
-    help = 'Clean up expired rate limit entries'
-    
+
+    help = "Clean up expired rate limit entries"
+
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry-run',
-            action='store_true',
-            help='Show what would be deleted without actually deleting',
+            "--dry-run",
+            action="store_true",
+            help="Show what would be deleted without actually deleting",
         )
-        
+
     def handle(self, *args, **options):
-        dry_run = options['dry_run']
-        
+        dry_run = options["dry_run"]
+
         # Count expired entries
         expired_count = RateLimitEntry.objects.filter(
             expires_at__lt=timezone.now()
         ).count()
-        
+
         if dry_run:
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'Would delete {expired_count} expired rate limit entries'
+                    f"Would delete {expired_count} expired rate limit entries"
                 )
             )
         else:
@@ -38,9 +38,9 @@ class Command(BaseCommand):
             deleted_count, _ = RateLimitEntry.objects.filter(
                 expires_at__lt=timezone.now()
             ).delete()
-            
+
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'Successfully deleted {deleted_count} expired rate limit entries'
+                    f"Successfully deleted {deleted_count} expired rate limit entries"
                 )
             )

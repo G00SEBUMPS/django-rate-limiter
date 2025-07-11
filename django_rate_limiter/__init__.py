@@ -22,12 +22,12 @@ from .exceptions import RateLimitExceeded
 
 __all__ = [
     "rate_limit",
-    "RateLimitMiddleware", 
+    "RateLimitMiddleware",
     "SlidingWindowRateLimiter",
     "TokenBucketRateLimiter",
     "FixedWindowRateLimiter",
     "MemoryBackend",
-    "DatabaseBackend", 
+    "DatabaseBackend",
     "RedisBackend",
     "RateLimitExceeded",
 ]

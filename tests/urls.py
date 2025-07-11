@@ -19,7 +19,7 @@ def health_view(request):
 
 
 urlpatterns = [
-    path('api/test/', api_view, name='api_test'),
-    path('login/', login_view, name='login'),
-    path('health/', health_view, name='health'),
+    path("api/test/", api_view, name="api_test"),
+    path("login/", login_view, name="login"),
+    path("health/", health_view, name="health"),
 ]

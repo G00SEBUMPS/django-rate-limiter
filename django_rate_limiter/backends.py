@@ -10,14 +10,13 @@ import threading
 import json
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Tuple
-from contextlib import contextmanager
-from django.core.cache import cache
-from django.db import models, transaction
+from django.db import transaction
 from django.utils import timezone
 from .exceptions import BackendError
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -25,27 +24,27 @@ except ImportError:
 
 class BaseBackend(ABC):
     """Abstract base class for rate limiting storage backends."""
-    
+
     @abstractmethod
     def get(self, key: str) -> Optional[Dict[str, Any]]:
         """Get data for a key."""
         pass
-        
+
     @abstractmethod
     def set(self, key: str, value: Dict[str, Any], ttl: int) -> None:
         """Set data for a key with TTL."""
         pass
-        
+
     @abstractmethod
     def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
         """Atomically increment a counter."""
         pass
-        
+
     @abstractmethod
     def delete(self, key: str) -> None:
         """Delete a key."""
         pass
-        
+
     @abstractmethod
     def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
         """Perform atomic update on a key's value."""
@@ -54,21 +53,22 @@ class BaseBackend(ABC):
 
 class MemoryBackend(BaseBackend):
     """Thread-safe in-memory storage backend."""
-    
+
     def __init__(self):
         self._data: Dict[str, Tuple[Dict[str, Any], float]] = {}
         self._lock = threading.RLock()  # Use RLock to prevent deadlocks
-        
+
     def _cleanup_expired(self):
         """Remove expired entries."""
         current_time = time.time()
         expired_keys = [
-            key for key, (_, expiry) in self._data.items()
+            key
+            for key, (_, expiry) in self._data.items()
             if expiry and current_time > expiry
         ]
         for key in expired_keys:
             self._data.pop(key, None)
-            
+
     def get(self, key: str) -> Optional[Dict[str, Any]]:
         """Get data for a key."""
         with self._lock:
@@ -78,13 +78,13 @@ class MemoryBackend(BaseBackend):
                 if not expiry or time.time() <= expiry:
                     return value.copy()
             return None
-            
+
     def set(self, key: str, value: Dict[str, Any], ttl: int) -> None:
         """Set data for a key with TTL."""
         with self._lock:
             expiry = time.time() + ttl if ttl else None
             self._data[key] = (value.copy(), expiry)
-            
+
     def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
         """Atomically increment a counter."""
         with self._lock:
@@ -102,12 +102,12 @@ class MemoryBackend(BaseBackend):
                         ttl = max(0, int(expiry - time.time()))
                 self.set(key, current_data, ttl or 3600)  # Default 1 hour
             return new_count
-            
+
     def delete(self, key: str) -> None:
         """Delete a key."""
         with self._lock:
             self._data.pop(key, None)
-            
+
     def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
         """Perform atomic update on a key's value."""
         with self._lock:
@@ -120,64 +120,60 @@ class MemoryBackend(BaseBackend):
 
 class DatabaseBackend(BaseBackend):
     """Database storage backend using Django ORM."""
-    
+
     def __init__(self):
         self._ensure_table_exists()
-        
+
     def _ensure_table_exists(self):
         """Ensure the rate limit table exists."""
         # This will be handled by migrations
-        try:
-            from .models import RateLimitEntry
-            RateLimitEntry.objects.all().exists()  # Trigger model loading
-        except ImportError:
-            raise BackendError("Database model not found. Ensure migrations are applied.")
-        pass
-        
+        # Check if database storage config is set
+
     def get(self, key: str) -> Optional[Dict[str, Any]]:
         """Get data for a key."""
         try:
             from .models import RateLimitEntry
+
             entry = RateLimitEntry.objects.filter(
-                key=key,
-                expires_at__gt=timezone.now()
+                key=key, expires_at__gt=timezone.now()
             ).first()
             if entry:
                 return json.loads(entry.data)
             return None
         except Exception as e:
             raise BackendError(f"Database get error: {e}")
-            
+
     def set(self, key: str, value: Dict[str, Any], ttl: int) -> None:
         """Set data for a key with TTL."""
         try:
             from .models import RateLimitEntry
+
             expires_at = timezone.now() + timezone.timedelta(seconds=ttl)
-            
+
             with transaction.atomic():
                 RateLimitEntry.objects.update_or_create(
                     key=key,
                     defaults={
-                        'data': json.dumps(value),
-                        'expires_at': expires_at,
-                    }
+                        "data": json.dumps(value),
+                        "expires_at": expires_at,
+                    },
                 )
         except Exception as e:
             raise BackendError(f"Database set error: {e}")
-            
+
     def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
         """Atomically increment a counter."""
         try:
             from .models import RateLimitEntry
-            from django.db import connection
-            
+
             with transaction.atomic():
                 # Use SELECT FOR UPDATE to prevent race conditions
-                entry = RateLimitEntry.objects.select_for_update().filter(
-                    key=key,
-                    expires_at__gt=timezone.now()
-                ).first()
-                
+                entry = (
+                    RateLimitEntry.objects.select_for_update()
+                    .filter(key=key, expires_at__gt=timezone.now())
+                    .first()
+                )
+
                 if entry:
                     data = json.loads(entry.data)
                     new_count = data.get("count", 0) + amount
@@ -186,52 +182,56 @@ class DatabaseBackend(BaseBackend):
                     entry.save()
                 else:
                     new_count = amount
-                    expires_at = timezone.now() + timezone.timedelta(seconds=ttl or 3600)
+                    expires_at = timezone.now() + timezone.timedelta(
+                        seconds=ttl or 3600
+                    )
                     RateLimitEntry.objects.create(
                         key=key,
                         data=json.dumps({"count": new_count}),
-                        expires_at=expires_at
+                        expires_at=expires_at,
                     )
                 return new_count
         except Exception as e:
             raise BackendError(f"Database increment error: {e}")
-            
+
     def delete(self, key: str) -> None:
         """Delete a key."""
         try:
             from .models import RateLimitEntry
+
             RateLimitEntry.objects.filter(key=key).delete()
         except Exception as e:
             raise BackendError(f"Database delete error: {e}")
-            
+
     def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
         """Perform atomic update on a key's value."""
         try:
             from .models import RateLimitEntry
-            
+
             with transaction.atomic():
-                entry = RateLimitEntry.objects.select_for_update().filter(
-                    key=key,
-                    expires_at__gt=timezone.now()
-                ).first()
-                
+                entry = (
+                    RateLimitEntry.objects.select_for_update()
+                    .filter(key=key, expires_at__gt=timezone.now())
+                    .first()
+                )
+
                 current_data = None
                 if entry:
                     current_data = json.loads(entry.data)
-                    
+
                 new_data = updater_func(current_data)
-                
+
                 if new_data is not None:
-                    expires_at = timezone.now() + timezone.timedelta(seconds=ttl or 3600)
+                    expires_at = timezone.now() + timezone.timedelta(
+                        seconds=ttl or 3600
+                    )
                     if entry:
                         entry.data = json.dumps(new_data)
                         entry.expires_at = expires_at
                         entry.save()
                     else:
                         RateLimitEntry.objects.create(
-                            key=key,
-                            data=json.dumps(new_data),
-                            expires_at=expires_at
+                            key=key, data=json.dumps(new_data), expires_at=expires_at
                         )
                 return new_data
         except Exception as e:
@@ -240,17 +240,17 @@ class DatabaseBackend(BaseBackend):
 
 class RedisBackend(BaseBackend):
     """Redis storage backend."""
-    
+
     def __init__(self, redis_client=None, **kwargs):
         if not REDIS_AVAILABLE:
             raise BackendError("Redis is not available. Install redis package.")
-            
+
         if redis_client:
             self.redis = redis_client
         else:
             # Default Redis connection
             self.redis = redis.Redis(**kwargs)
-            
+
     def get(self, key: str) -> Optional[Dict[str, Any]]:
         """Get data for a key."""
         try:
@@ -260,21 +260,21 @@ class RedisBackend(BaseBackend):
             return None
         except Exception as e:
             raise BackendError(f"Redis get error: {e}")
-            
+
     def set(self, key: str, value: Dict[str, Any], ttl: int) -> None:
         """Set data for a key with TTL."""
         try:
             self.redis.setex(key, ttl, json.dumps(value))
         except Exception as e:
             raise BackendError(f"Redis set error: {e}")
-            
+
     def increment(self, key: str, amount: int = 1, ttl: int = None) -> int:
         """Atomically increment a counter."""
         try:
             # Use Redis pipeline for atomicity
             pipe = self.redis.pipeline()
             pipe.multi()
-            
+
             # Check if key exists
             current = self.redis.get(key)
             if current:
@@ -284,21 +284,21 @@ class RedisBackend(BaseBackend):
             else:
                 new_count = amount
                 data = {"count": new_count}
-                
+
             pipe.setex(key, ttl or 3600, json.dumps(data))
             pipe.execute()
-            
+
             return new_count
         except Exception as e:
             raise BackendError(f"Redis increment error: {e}")
-            
+
     def delete(self, key: str) -> None:
         """Delete a key."""
         try:
             self.redis.delete(key)
         except Exception as e:
             raise BackendError(f"Redis delete error: {e}")
-            
+
     def atomic_update(self, key: str, updater_func, ttl: int = None) -> Any:
         """Perform atomic update on a key's value."""
         try:
@@ -307,22 +307,22 @@ class RedisBackend(BaseBackend):
                     try:
                         # Watch the key for changes
                         pipe.watch(key)
-                        
+
                         # Get current value
                         current_data = None
                         data = pipe.get(key)
                         if data:
                             current_data = json.loads(data)
-                            
+
                         # Apply update function
                         new_data = updater_func(current_data)
-                        
+
                         if new_data is not None:
                             # Start transaction
                             pipe.multi()
                             pipe.setex(key, ttl or 3600, json.dumps(new_data))
                             pipe.execute()
-                            
+
                         return new_data
                     except redis.WatchError:
                         # Key was modified, retry
@@ -340,7 +340,7 @@ _redis_backend = None
 def get_backend(backend_type: str = "memory", **kwargs) -> BaseBackend:
     """Get a backend instance."""
     global _memory_backend, _database_backend, _redis_backend
-    
+
     if backend_type == "memory":
         if _memory_backend is None:
             _memory_backend = MemoryBackend()
