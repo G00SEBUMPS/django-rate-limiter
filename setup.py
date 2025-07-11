@@ -12,12 +12,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="django-rate-limiter",
     version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Vaibhav Singh",
+    author_email="positive.vaipsi@gmail.com",
     description="A comprehensive Django rate limiter with multiple algorithms and storage backends",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/django-rate-limiter",
+    url="https://github.com/G00SEBUMPS/django-rate-limiter",
     packages=find_packages(exclude=["tests*"]),
     classifiers=[
         "Development Status :: 4 - Beta",
