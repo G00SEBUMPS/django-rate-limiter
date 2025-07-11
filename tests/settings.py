@@ -11,6 +11,7 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',
+    'django.contrib.sessions',
     'django_rate_limiter',
 ]
 
@@ -52,6 +53,10 @@ RATE_LIMIT_SETTINGS = {
 }
 
 MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django_rate_limiter.middleware.RateLimitMiddleware',
 ]
 

@@ -86,7 +86,8 @@ warn_unused_configs = true
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
-addopts = "-v --tb=short --strict-markers"
+python_paths = ["."]
+addopts = "-v --tb=short --strict-markers --nomigrations"
 testpaths = ["tests"]
 
 [tool.coverage.run]

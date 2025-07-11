@@ -52,15 +52,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install Django==${{ matrix.django-version }}
         pip install -r requirements.txt
-        pip install pytest pytest-django pytest-cov redis
+        pip install pytest>=7.0.0 pytest-django>=4.5.0 pytest-cov>=4.0.0 redis>=4.0.0
 
     - name: Install package
       run: |
         pip install -e .
 
     - name: Run tests
+      env:
+        DJANGO_SETTINGS_MODULE: tests.settings
       run: |
-        pytest tests/ -v --cov=django_rate_limiter --cov-report=xml --cov-report=term
+        python -m pytest tests/ -v --cov=django_rate_limiter --cov-report=xml --cov-report=term
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
