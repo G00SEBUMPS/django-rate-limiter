@@ -55,3 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backend-specific tests for memory, database, and Redis
 - Rate limiting accuracy tests under various scenarios
 - GitHub Actions workflow for automated testing
+
+## [1.0.1] - 2025-07-29
+### Fixed
+- Bump version to 1.0.1 in `pyproject.toml`
+- Updated installation instructions in README and CONFIGURATION.md
+- Added MANIFEST.in to include LICENSE and README files in the package
