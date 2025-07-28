@@ -24,10 +24,10 @@ def get_client_ip(request: HttpRequest) -> str:
 
 def get_user_identifier(request: HttpRequest, use_user: bool = True) -> str:
     """Get a unique identifier for the user."""
-    if (use_user and hasattr(request, "user") and 
-        request.user is not None and 
-        hasattr(request.user, 'is_authenticated') and 
-        request.user.is_authenticated):
+    if (use_user and hasattr(request, "user") and
+        request.user is not None and
+        hasattr(request.user, 'is_authenticated') and
+            request.user.is_authenticated):
         return f"user:{request.user.pk}"
     else:
         return f"ip:{get_client_ip(request)}"
@@ -168,8 +168,8 @@ def rate_limit_class(
             if hasattr(cls, method_lower):
                 original_method = getattr(cls, method_lower)
                 decorated_method = _create_rate_limited_method(
-                    original_method, method_lower, cls.__module__, cls.__name__,
-                    limit, window, decorator_kwargs
+                    original_method, method_lower, cls.__module__,
+                    cls.__name__, limit, window, decorator_kwargs
                 )
                 setattr(cls, method_lower, decorated_method)
         return cls
@@ -177,8 +177,8 @@ def rate_limit_class(
     return decorator
 
 
-def _create_rate_limited_method(original_method, method_name, cls_module, cls_name,
-                               limit, window, decorator_kwargs):
+def _create_rate_limited_method(original_method, method_name, cls_module,
+                                cls_name, limit, window, decorator_kwargs):
     """Create a rate-limited wrapper for a class method."""
     @functools.wraps(original_method)
     def method_wrapper(self, request, *args, **kwargs):
@@ -190,19 +190,20 @@ def _create_rate_limited_method(original_method, method_name, cls_module, cls_na
 
 
 def _handle_rate_limiting(original_method, method_name, cls_module, cls_name,
-                         self, request, args, kwargs, limit, window, decorator_kwargs):
+                          self, request, args, kwargs, limit, window,
+                          decorator_kwargs):
     """Handle the rate limiting logic for class methods."""
     # Get backend instance
     backend_kwargs_final = decorator_kwargs.get('backend_kwargs', {})
     backend_instance = get_backend(
-        decorator_kwargs.get('backend', 'memory'), 
+        decorator_kwargs.get('backend', 'memory'),
         **backend_kwargs_final
     )
 
     # Get rate limiter instance
-    limiter_kwargs = {k: v for k, v in decorator_kwargs.items() 
-                    if k not in ['backend', 'backend_kwargs', 'scope', 
-                               'key_func', 'error_response', 'use_user']}
+    limiter_kwargs = {k: v for k, v in decorator_kwargs.items()
+                      if k not in ['backend', 'backend_kwargs', 'scope',
+                                   'key_func', 'error_response', 'use_user']}
     rate_limiter = get_rate_limiter(
         algorithm=decorator_kwargs.get('algorithm', 'sliding_window'),
         backend=backend_instance,
@@ -218,7 +219,8 @@ def _handle_rate_limiting(original_method, method_name, cls_module, cls_name,
         identifier = get_user_identifier(request, use_user)
 
     # Generate scope
-    scope = decorator_kwargs.get('scope') or f"{cls_module}.{cls_name}.{method_name}"
+    scope = (decorator_kwargs.get('scope') or
+             f"{cls_module}.{cls_name}.{method_name}")
 
     try:
         # Check rate limit
@@ -230,8 +232,10 @@ def _handle_rate_limiting(original_method, method_name, cls_module, cls_name,
         # Add rate limiting headers
         if hasattr(response, "__setitem__"):
             response["X-RateLimit-Limit"] = str(limit)
-            response["X-RateLimit-Remaining"] = str(metadata.get("remaining", 0))
-            response["X-RateLimit-Reset"] = str(int(metadata.get("reset_time", 0)))
+            response["X-RateLimit-Remaining"] = str(
+                metadata.get("remaining", 0))
+            response["X-RateLimit-Reset"] = str(
+                int(metadata.get("reset_time", 0)))
 
         return response
 
@@ -244,7 +248,7 @@ def _create_error_response(exception, limit, window, decorator_kwargs):
     error_response = decorator_kwargs.get('error_response')
     if error_response:
         return error_response(exception)
-    
+
     # Default error response
     response_data = {
         "error": "Rate limit exceeded",
@@ -359,7 +363,8 @@ def custom_key_rate_limit(
     return rate_limit(limit=limit, window=window, key_func=key_func, **decorator_kwargs)
 
 
-def rate_limit_method(method_name: str, limit: int, window: int, **decorator_kwargs):
+def rate_limit_method(method_name: str, limit: int, window: int,
+                      **decorator_kwargs):
     """
     Class decorator for rate limiting a specific method of a Django class-based view.
 
@@ -374,7 +379,7 @@ def rate_limit_method(method_name: str, limit: int, window: int, **decorator_kwa
         class MyAPIView(APIView):
             def get(self, request):
                 return Response({"message": "Not rate limited"})
-            
+
             def post(self, request):
                 return Response({"message": "Rate limited"})
     """

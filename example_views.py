@@ -6,8 +6,6 @@ This demonstrates how to integrate the Django Rate Limiter in a real Django proj
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 
 from django_rate_limiter.decorators import (
     custom_key_rate_limit,
@@ -198,7 +196,7 @@ def smart_api_endpoint(request):
 # =============================================================================
 
 from django_rate_limiter.exceptions import RateLimitExceeded
-from django_rate_limiter.utils import check_rate_limit, is_rate_limited
+from django_rate_limiter.utils import check_rate_limit
 
 
 def manual_rate_check_view(request):
