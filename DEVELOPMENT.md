@@ -20,7 +20,7 @@
 2. **Run tests:**
    ```bash
    pytest tests/ -v
-   pytest tests/ --cov=django_rate_limiter --cov-report=html
+   pytest tests/ --cov=django_rate_limiter-goosebumps --cov-report=html
    ```
 
 3. **Try the demo:**

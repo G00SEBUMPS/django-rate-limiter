@@ -14,7 +14,7 @@ A comprehensive Django rate limiter with multiple algorithms and storage backend
 ## 📦 Installation
 
 ```bash
-pip install django-rate-limiter
+pip install django-rate-limiter-goosebumps
 ```
 
 For Redis support:
@@ -497,7 +497,7 @@ pip install -e .[dev]
 pytest
 
 # Run tests with coverage
-pytest --cov=django_rate_limiter --cov-report=html
+pytest --cov=django_rate_limiter-goosebumps --cov-report=html
 ```
 
 ## Development Tools 🛠️

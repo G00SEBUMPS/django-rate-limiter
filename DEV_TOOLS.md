@@ -101,8 +101,8 @@ make check && git add . && git commit -m "Your message"
 ### Fix Formatting Issues
 ```bash
 # Auto-fix formatting
-black django_rate_limiter tests
-isort --profile black django_rate_limiter tests
+black django_rate_limiter-goosebumps tests
+isort --profile black django_rate_limiter-goosebumps tests
 
 # Or using Make
 make format

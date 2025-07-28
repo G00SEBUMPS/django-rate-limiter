@@ -25,25 +25,25 @@ dev-install: install
 
 # Testing
 test:
-	python -m pytest tests/ -v --cov=django_rate_limiter --cov-report=term
+	python -m pytest tests/ -v --cov=django_rate_limiter-goosebumps --cov-report=term
 
 test-verbose:
-	python -m pytest tests/ -v --cov=django_rate_limiter --cov-report=term --cov-report=html
+	python -m pytest tests/ -v --cov=django_rate_limiter-goosebumps --cov-report=term --cov-report=html
 
 # Code quality
 format:
 	@echo "Running Black..."
-	black django_rate_limiter tests
+	black django_rate_limiter-goosebumps tests
 	@echo "Running isort..."
-	isort --profile black django_rate_limiter tests
+	isort --profile black django_rate_limiter-goosebumps tests
 
 lint:
 	@echo "Running flake8..."
-	flake8 django_rate_limiter tests --max-line-length=88 --extend-ignore=E203,W503
+	flake8 django_rate_limiter-goosebumps tests --max-line-length=88 --extend-ignore=E203,W503
 
 type-check:
 	@echo "Running mypy..."
-	mypy django_rate_limiter --ignore-missing-imports --no-strict-optional
+	mypy django_rate_limiter-goosebumps --ignore-missing-imports --no-strict-optional
 
 # Combined checks
 check: format lint type-check test
