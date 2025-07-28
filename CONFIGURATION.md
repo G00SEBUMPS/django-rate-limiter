@@ -7,7 +7,7 @@ This guide explains how to configure the Django Rate Limiter to use different st
 First, install the package:
 
 ```bash
-pip install django-rate-limiter
+pip install django-rate-limiter-goosebumps
 ```
 
 For Redis support, also install:

@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-07-29
+
+### Fixed
+- **BREAKING FIX**: Fixed `rate_limit_class` decorator failing with `AttributeError: 'SomeView' object has no attribute 'META'`
+  - The decorator was incorrectly treating the `self` parameter as the `request` parameter in class-based views
+  - Completely rewrote the decorator to properly handle class method signatures `(self, request, *args, **kwargs)`
+  - Enhanced `get_user_identifier` to handle cases where `request.user` is `None`
+  - Added proper null checks and improved error handling
+
+### Added
+- **NEW**: `rate_limit_method` decorator for rate limiting specific methods of a class
+  - Allows targeting individual HTTP methods (e.g., only `POST`) instead of all methods
+  - Clean syntax: `@rate_limit_method('post', limit=50, window=3600)`
+  - Can be stacked for different limits on different methods
+- Better code organization with extracted helper functions (`_create_rate_limited_method`, `_handle_rate_limiting`, `_create_error_response`)
+
+### Changed
+- Refactored `rate_limit_class` decorator for better maintainability and reduced cognitive complexity
+- Improved closure handling to avoid variable capture issues in loops
+
+## [1.0.1] - 2025-07-29
+### Fixed
+- Bump version to 1.0.1 in `pyproject.toml`
+- Updated installation instructions in README and CONFIGURATION.md
+- Added MANIFEST.in to include LICENSE and README files in the package
+
 ## [1.0.0] - 2025-07-11
 
 ### Added
@@ -56,8 +82,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rate limiting accuracy tests under various scenarios
 - GitHub Actions workflow for automated testing
 
-## [1.0.1] - 2025-07-29
-### Fixed
-- Bump version to 1.0.1 in `pyproject.toml`
-- Updated installation instructions in README and CONFIGURATION.md
-- Added MANIFEST.in to include LICENSE and README files in the package

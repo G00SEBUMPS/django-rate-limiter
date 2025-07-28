@@ -6,7 +6,7 @@ Supports sliding window, token bucket, and fixed window rate limiting with
 thread-safe, deadlock-safe implementation.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.2"
 __author__ = "Your Name"
 __email__ = "your.email@example.com"
 

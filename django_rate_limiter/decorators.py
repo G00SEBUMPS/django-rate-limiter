@@ -24,7 +24,10 @@ def get_client_ip(request: HttpRequest) -> str:
 
 def get_user_identifier(request: HttpRequest, use_user: bool = True) -> str:
     """Get a unique identifier for the user."""
-    if use_user and hasattr(request, "user") and request.user.is_authenticated:
+    if (use_user and hasattr(request, "user") and 
+        request.user is not None and 
+        hasattr(request.user, 'is_authenticated') and 
+        request.user.is_authenticated):
         return f"user:{request.user.pk}"
     else:
         return f"ip:{get_client_ip(request)}"
@@ -164,16 +167,103 @@ def rate_limit_class(
             method_lower = method.lower()
             if hasattr(cls, method_lower):
                 original_method = getattr(cls, method_lower)
-                decorated_method = rate_limit(
-                    limit=limit,
-                    window=window,
-                    scope=f"{cls.__module__}.{cls.__name__}.{method_lower}",
-                    **decorator_kwargs,
-                )(original_method)
+                decorated_method = _create_rate_limited_method(
+                    original_method, method_lower, cls.__module__, cls.__name__,
+                    limit, window, decorator_kwargs
+                )
                 setattr(cls, method_lower, decorated_method)
         return cls
 
     return decorator
+
+
+def _create_rate_limited_method(original_method, method_name, cls_module, cls_name,
+                               limit, window, decorator_kwargs):
+    """Create a rate-limited wrapper for a class method."""
+    @functools.wraps(original_method)
+    def method_wrapper(self, request, *args, **kwargs):
+        return _handle_rate_limiting(
+            original_method, method_name, cls_module, cls_name,
+            self, request, args, kwargs, limit, window, decorator_kwargs
+        )
+    return method_wrapper
+
+
+def _handle_rate_limiting(original_method, method_name, cls_module, cls_name,
+                         self, request, args, kwargs, limit, window, decorator_kwargs):
+    """Handle the rate limiting logic for class methods."""
+    # Get backend instance
+    backend_kwargs_final = decorator_kwargs.get('backend_kwargs', {})
+    backend_instance = get_backend(
+        decorator_kwargs.get('backend', 'memory'), 
+        **backend_kwargs_final
+    )
+
+    # Get rate limiter instance
+    limiter_kwargs = {k: v for k, v in decorator_kwargs.items() 
+                    if k not in ['backend', 'backend_kwargs', 'scope', 
+                               'key_func', 'error_response', 'use_user']}
+    rate_limiter = get_rate_limiter(
+        algorithm=decorator_kwargs.get('algorithm', 'sliding_window'),
+        backend=backend_instance,
+        **limiter_kwargs
+    )
+
+    # Generate identifier
+    key_func = decorator_kwargs.get('key_func')
+    use_user = decorator_kwargs.get('use_user', True)
+    if key_func:
+        identifier = key_func(request)
+    else:
+        identifier = get_user_identifier(request, use_user)
+
+    # Generate scope
+    scope = decorator_kwargs.get('scope') or f"{cls_module}.{cls_name}.{method_name}"
+
+    try:
+        # Check rate limit
+        metadata = rate_limiter.enforce(identifier, limit, window, scope)
+
+        # Call original method
+        response = original_method(self, request, *args, **kwargs)
+
+        # Add rate limiting headers
+        if hasattr(response, "__setitem__"):
+            response["X-RateLimit-Limit"] = str(limit)
+            response["X-RateLimit-Remaining"] = str(metadata.get("remaining", 0))
+            response["X-RateLimit-Reset"] = str(int(metadata.get("reset_time", 0)))
+
+        return response
+
+    except RateLimitExceeded as e:
+        return _create_error_response(e, limit, window, decorator_kwargs)
+
+
+def _create_error_response(exception, limit, window, decorator_kwargs):
+    """Create an error response for rate limit exceeded."""
+    error_response = decorator_kwargs.get('error_response')
+    if error_response:
+        return error_response(exception)
+    
+    # Default error response
+    response_data = {
+        "error": "Rate limit exceeded",
+        "message": str(exception),
+        "limit": limit,
+        "window": window,
+    }
+
+    if exception.retry_after:
+        response_data["retry_after"] = exception.retry_after
+
+    response = JsonResponse(response_data, status=429)
+    response["X-RateLimit-Limit"] = str(limit)
+    response["X-RateLimit-Remaining"] = "0"
+
+    if exception.retry_after:
+        response["Retry-After"] = str(exception.retry_after)
+
+    return response
 
 
 def throttle(rate: str, algorithm: str = "token_bucket", **decorator_kwargs):
@@ -267,3 +357,35 @@ def custom_key_rate_limit(
             return JsonResponse({"data": "api response"})
     """
     return rate_limit(limit=limit, window=window, key_func=key_func, **decorator_kwargs)
+
+
+def rate_limit_method(method_name: str, limit: int, window: int, **decorator_kwargs):
+    """
+    Class decorator for rate limiting a specific method of a Django class-based view.
+
+    Args:
+        method_name: Name of the HTTP method to rate limit (e.g., 'get', 'post', 'put')
+        limit: Maximum number of requests allowed
+        window: Time window in seconds
+        **decorator_kwargs: Additional arguments passed to rate_limit decorator
+
+    Example:
+        @rate_limit_method('post', limit=50, window=3600)
+        class MyAPIView(APIView):
+            def get(self, request):
+                return Response({"message": "Not rate limited"})
+            
+            def post(self, request):
+                return Response({"message": "Rate limited"})
+    """
+    def decorator(cls):
+        method_lower = method_name.lower()
+        if hasattr(cls, method_lower):
+            original_method = getattr(cls, method_lower)
+            decorated_method = _create_rate_limited_method(
+                original_method, method_lower, cls.__module__, cls.__name__,
+                limit, window, decorator_kwargs
+            )
+            setattr(cls, method_lower, decorated_method)
+        return cls
+    return decorator
