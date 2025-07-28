@@ -197,7 +197,9 @@ def get_request_fingerprint(request) -> str:
     ]
 
     fingerprint_string = "|".join(components)
-    return hashlib.md5(fingerprint_string.encode()).hexdigest()
+    return hashlib.md5(
+        fingerprint_string.encode(), usedforsecurity=False
+    ).hexdigest()  # nosec B324
 
 
 def parse_rate_string(rate_string: str) -> tuple:
